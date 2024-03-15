@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projekt Ksiąka</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="stylek.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Dane ucznia</h2>
+                <form id="daneForm" action="https://imiki.pl/projekt/pb14/users" method="post">
+                    <input type="hidden" value="pb14" name="id"> 
+                    <div class="form-group">
+                        <label for="imie">Imię:</label>
+                        <input type="text" class="form-control" id="imie" name="imie" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nazwisko">Nazwisko:</label>
+                        <input type="text" class="form-control" id="nazwisko" name="nazwisko" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="klasa">Klasa:</label>
+                        <input type="text" class="form-control" id="klasa" name="klasa" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Wyślij</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <h2>Dane książki</h2>
+                <form id="książkaForm" action="https://imiki.pl/projekt/pb14/books" method="post">
+                    <div class="form-group">
+                        <label for="tytul">Tytuł:</label>
+                        <input type="text" class="form-control" id="tytul" name="tytul" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="autor">Autor:</label>
+                        <input type="text" class="form-control" id="autor" name="autor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ISBN">Podaj ISBN:</label>
+                        <input type="text" class="form-control" id="ISBN" name="ISBN" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Wyślij</button>
+                </form>
+            </div>
+        </div>
+        <button class="btn btn-info mt-3" id="listab">Wyświetl listę uczniów</button>
+        <button class="btn btn-warning mt-3" id="wypozyczoneBtn">Pokaż wypożyczone książki</button>
+        <div id="wyp" class="mt-3"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.min.js"></script>
+    <script>
+        const url = "https://imiki.pl/projekt/pb14";
+        const wypluwacz = document.getElementById("wyp");
+        const btnList = document.getElementById("listab");
+        const btnWypozyczone = document.getElementById("wypozyczoneBtn");
+
+        btnList.addEventListener("click", () => {
+            pobierzDane();
+        });
+
+        btnWypozyczone.addEventListener("click", () => {
+            pokazWypozyczone();
+        });
+
+        function pobierzDane() {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    dane(data);
+                })
+                .catch(error => {
+                    console.error('Błąd podczas pobierania danych JSON:', error);
+                });
+        }
+
+        function pokazWypozyczone() {
+            fetch(`${url}/books/borrowed`)
+                .then(response => response.json())
+                .then(data => {
+                    displayData(data, 'books');
+                })
+                .catch(error => {
+                    console.error('Błąd podczas pobierania wypożyczonych książek:', error);
+                });
+        }
+
+        function dane(d) {
+            let str = "";
+            let i = 0;
+            for (const ind of d) {
+                const a = JSON.parse(ind.data);
+                i++;
+                str += i + " ";
+                str += a.imie + " "; 
+                str += a.nazwisko + " "; 
+                str += a.klasa + " ";
+            }
+            wypluwacz.innerHTML = str;
+        }
+
+        document.getElementById("daneForm").addEventListener("submit", function (event) {
+            if (!validateForm()) {
+                event.preventDefault();
+            }
+        });
+
+        document.getElementById("książkaForm").addEventListener("submit", function (event) {
+            if (!validateBookForm()) {
+                event.preventDefault();
+            }
+        });
+
+        function validateForm() {
+            const textRegex = /^[a-zA-Z]+$/;
+            const txtnumRegex = /^[a-zA-Z0-9]+$/;
+
+            return validateField("imie", textRegex) && validateField("nazwisko", textRegex) && validateField("klasa", txtnumRegex);
+        }
+
+        function validateBookForm() {
+            const allRegex = /.+/;
+            const ISBNRegex = /^\d{13}$/;
+
+            return validateField("tytul", allRegex) && validateField("autor", allRegex) && validateField("ISBN", ISBNRegex);
+        }
+
+        function validateField(fieldName, regex) {
+            const field = document.getElementById(fieldName);
+            const fieldValue = field.value.trim();
+
+            if (!regex.test(fieldValue)) {
+                alert("Błąd walidacji: " + fieldName);
+                return false;
+            }
+
+            return true;
+        }
+
+        function displayData(d, dataType) {
+            let str = "";
+            d.forEach((ind, i) => {
+                let bookData = JSON.parse(ind.data);
+                str += (i + 1) + " ";
+                str += ind.id + " ";
+                str += ind.tytul + " ";
+                str += ind.autor + " ";
+                str += ind.isbn + " ";
+                str += ind.dataWydania + "<br>";
+            });
+            wypluwacz.innerHTML = str;
+        }
+    </script>
+</body>
+</html>
